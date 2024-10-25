@@ -1,0 +1,102 @@
+/* Vanilla CSS for flip card */
+.card {
+  perspective: 800px;
+}
+.card__content {
+  transform-style: preserve-3d;
+}
+.is-flipped .card__content {
+  transform: rotateY(0.5turn);
+}
+
+.card__front,
+.card__back {
+  backface-visibility: hidden;
+}
+.card__back {
+  transform: rotateY(0.5turn);
+}
+
+/* css border animation */
+
+@property --angle {
+  syntax: "<angle>";
+  initial-value: 90deg;
+  inherits: true;
+}
+
+@property --gradX {
+  syntax: "<percentage>";
+  initial-value: 50%;
+  inherits: true;
+}
+
+@property --gradY {
+  syntax: "<percentage>";
+  initial-value: 0%;
+  inherits: true;
+}
+
+:root {
+  --d: 2500ms;
+  --angle: 90deg;
+  --gradX: 100%;
+  --gradY: 50%;
+  --c1: rgb(255, 213, 0);
+  --c2: rgba(146, 136, 0, 0.247);
+  --c3: rgb(255, 0, 0);
+  --c4: rgba(255, 0, 0, 0.241);
+  --c5: rgb(0, 251, 255);
+  --c6: rgba(0, 255, 234, 0.241);
+}
+
+.box-animation {
+  font-size: 3vw;
+  border: 0.35rem solid;
+  padding: 3vw;
+  border-image: conic-gradient(
+      from var(--angle),
+      var(--c2),
+      var(--c1) 0.1turn,
+      var(--c1) 0.15turn,
+      var(--c2) 0.25turn
+    )
+    30;
+  animation: borderRotate var(--d) linear infinite forwards;
+}
+
+.box-animation-special {
+  font-size: 3vw;
+  border: 0.35rem solid;
+  padding: 3vw;
+  border-image: conic-gradient(
+      from var(--angle),
+      var(--c4),
+      var(--c3) 0.1turn,
+      var(--c3) 0.15turn,
+      var(--c4) 0.25turn
+    )
+    30;
+  animation: borderRotate var(--d) linear infinite forwards;
+}
+
+.box-animation-legend {
+  font-size: 3vw;
+  border: 0.35rem solid;
+  padding: 3vw;
+  border-image: conic-gradient(
+      from var(--angle),
+      var(--c1),
+      var(--c3) 0.1turn,
+      var(--c5) 0.15turn,
+      var(--c6) 0.25turn
+    )
+    30;
+  animation: borderRotate var(--d) linear infinite forwards;
+}
+
+@keyframes borderRotate {
+  100% {
+    --angle: 420deg;
+  }
+}

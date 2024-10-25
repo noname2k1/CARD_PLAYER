@@ -1,0 +1,11 @@
+.card-1 {
+  background: url("/sprite_sheets/decade_cards.png") 300px 0px;
+}
+
+.card-2 {
+  background: url("/sprite_sheets/decade_cards.png") -180px -3073px;
+}
+
+.card-3 {
+  background: url("/sprite_sheets/decade_cards.png") 436px -1020px;
+}
