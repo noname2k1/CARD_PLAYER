@@ -4,9 +4,11 @@ import "@/app/styles/battle.css";
 // interface Props {}
 
 const Game = ({}: Props) => {
+  const inputRef = useRef<HTMLInputElement>(null);
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cardRef = useRef<HTMLDivElement>(null);
   const refXY = useRef<HTMLSpanElement>(null);
+  const fpsRef = useRef<number>(10);
 
   // change canvas w,h when resize screen
   useEffect(() => {
@@ -38,10 +40,16 @@ const Game = ({}: Props) => {
     if (canvasRef.current) {
       const canvas = canvasRef.current;
       const ctx = canvas.getContext("2d");
-      const DecadeController = new Decade(canvas, ctx);
-      let lastTime = 0;
-      const fpsInterval = 1000 / DecadeController.fps; // Tính khoảng thời gian giữa các khung hình
+      let fps = 10;
+      const DecadeController = new Decade(canvas, ctx, fpsRef.current);
       DecadeController.spriteSheet.onload = () => {
+        if (inputRef.current) {
+          inputRef.current.value = fpsRef.current.toString();
+          inputRef.current.onchange = function (e: Event) {
+            const target = e.target as HTMLInputElement;
+            fpsRef.current = +target.value;
+          };
+        }
         DecadeController.move();
         const update = () => {
           if (refXY.current) {
@@ -66,7 +74,9 @@ const Game = ({}: Props) => {
             }
           }
         };
+        let lastTime = 0;
         function animate(currentTime: DOMHighResTimeStamp) {
+          const fpsInterval = 1000 / fpsRef.current; // Lấy giá trị fps từ fpsRef // Tính khoảng thời gian giữa các khung hình
           // Tính thời gian giữa lần gọi trước và hiện tại
           const elapsed = currentTime - lastTime;
           // Nếu khoảng thời gian đủ lớn, tiến hành cập nhật khung hình
@@ -98,6 +108,20 @@ const Game = ({}: Props) => {
             ref={cardRef}
             className="w-[calc(130px+1rem)] h-[190px] object-fill"
           ></article>
+          <div className="bg-white flex items-center">
+            <label htmlFor="fps">fps: </label>
+            <input
+              type="number"
+              className="p-4 w-full outline-none"
+              name="fps"
+              id="fps"
+              min={1}
+              max={60}
+              pattern="\d*"
+              step={2}
+              ref={inputRef}
+            />
+          </div>
         </div>
       </section>
       <canvas ref={canvasRef} className=""></canvas>

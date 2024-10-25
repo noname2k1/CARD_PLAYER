@@ -24,8 +24,14 @@ export default class Decade {
   private ctx;
   private hasBullet = false;
   private skilling = false;
+  private lastCoordinates = { x: this.x, y: this.y };
+  private damage = 10;
   fps: number; // Giảm tốc độ xuống 30 FPS
-  constructor(canvas: HTMLCanvasElement, ctx: CanvasRenderingContext2D) {
+  constructor(
+    canvas: HTMLCanvasElement,
+    ctx: CanvasRenderingContext2D,
+    fps: number,
+  ) {
     this.canvas = canvas;
     this.spriteSheet = new Image();
     this.spriteSheet.src = "/sprite_sheets/decade.png";
@@ -33,7 +39,7 @@ export default class Decade {
     this.y = canvas.height / 1.5;
     this.groundY = canvas.height / 1.5;
     this.ctx = ctx;
-    this.fps = 10;
+    this.fps = fps;
   }
 
   private comeBackToIdle() {
@@ -64,11 +70,11 @@ export default class Decade {
     });
     window.addEventListener("keydown", (e: KeyboardEvent) => {
       // console.log(e.key);
-      if (e.key === "x") {
+      if (e.key === "x" && this.currState !== "punch") {
         if (this.weaponType < 5) {
           this.weaponType++;
         } else this.weaponType = 0;
-        console.log(this.weaponType);
+        // console.log(this.weaponType);
       }
       if (e.key === "b") {
         this.currState = "blast";
@@ -112,6 +118,26 @@ export default class Decade {
           this.spriteWidth = 180;
           this.maxFrameX = 4;
           this.spriteHeight = 230;
+        } else if (this.weaponType === 4) {
+          // final kiva
+          this.lastCoordinates.x = this.x;
+          this.lastCoordinates.y = this.y;
+          this.skilling = true;
+          // this.y -= 110;
+          this.srcY = 7570;
+          this.maxRow = 2;
+          this.spriteWidth = 90;
+          this.maxFrameX = 11;
+          this.spriteHeight = 150;
+        } else if (this.weaponType === 5) {
+          // final kiva
+          this.skilling = true;
+          this.y -= 40;
+          this.srcY = 7900;
+          this.maxRow = 4;
+          this.spriteWidth = 105;
+          this.maxFrameX = 10;
+          this.spriteHeight = 150;
         } else {
           this.srcY = 3300;
           this.maxRow = 2;
@@ -183,21 +209,31 @@ export default class Decade {
       ctx.save();
       let dirX = 1;
       let x = this.x + this.spriteWidth / 2;
+      let srXPre = this.srcX * this.frameX;
       if (this.isFlipped) {
         dirX = -1;
         x = this.x - this.spriteWidth / 2;
         ctx.translate(this.x + this.spriteWidth, this.y);
         ctx.scale(-1, 1);
       }
+      if (this.currState === "punch") {
+        if (
+          (this.weaponType === 1 ||
+            this.weaponType === 2 ||
+            this.weaponType === 3 ||
+            (this.weaponType === 5 &&
+              this.row >= 3 &&
+              this.row <= this.maxRow)) &&
+          this.frameX > 1
+        ) {
+          srXPre = this.srcX * this.frameX + this.srcX * (this.frameX - 1);
+        } else if (this.weaponType === 5) {
+          srXPre = this.srcX * this.frameX + 15 * (this.frameX - 1);
+        }
+      }
       ctx?.drawImage(
         this.spriteSheet,
-        (this.weaponType === 1 ||
-          this.weaponType === 2 ||
-          this.weaponType === 3) &&
-          this.currState === "punch" &&
-          this.frameX > 1
-          ? this.srcX * this.frameX + this.srcX * (this.frameX - 1)
-          : this.srcX * this.frameX,
+        srXPre,
         this.srcY,
         this.spriteWidth,
         this.spriteHeight,
@@ -208,16 +244,44 @@ export default class Decade {
       );
       if (this.currState === "blast" && !this.hasBullet) {
         this.hasBullet = true; // Set the flag to true as we're creating a bullet
-
+        let lastTime = 0;
         requestAnimationFrame(() => {
+          // const bullet = new Bullet(
+          //   this.canvas,
+          //   x,
+          //   this.y,
+          //   dirX, // Direction of the bullet
+          //   360,
+          //   4130,
+          // );
           const bullet = new Bullet(
             this.canvas,
             x,
-            this.y,
+            this.y - this.spriteHeight / 5,
             dirX, // Direction of the bullet
+            90,
+            8700,
+            4,
+            1,
+            210,
+            150,
+            100,
+            20,
           );
 
-          const animateBullet = () => {
+          const animateBullet = (currentTime: DOMHighResTimeStamp) => {
+            // ctx.clearRect(
+            //   bullet.x,
+            //   bullet.y,
+            //   bullet.spriteWidth,
+            //   bullet.spriteHeight,
+            // );
+            const fpsInterval = 1000 / this.fps; // Lấy giá trị fps từ fpsRef // Tính khoảng thời gian giữa các khung hình
+            // Tính thời gian giữa lần gọi trước và hiện tại
+            const elapsed = currentTime - lastTime;
+            // Nếu khoảng thời gian đủ lớn, tiến hành cập nhật khung hình
+            // if (elapsed > fpsInterval) {
+            //   lastTime = currentTime - (elapsed % fpsInterval); //
             bullet.fire(); // Update bullet position
             bullet.draw(this.ctx); // Draw the bullet
 
@@ -229,8 +293,9 @@ export default class Decade {
               this.hasBullet = false;
             }
           };
+          // };
 
-          animateBullet();
+          requestAnimationFrame(animateBullet);
         });
       }
 
@@ -296,10 +361,25 @@ export default class Decade {
         this.frameX = 1;
       }
     } else if (this.currState === "punch") {
-      if (this.frameX < this.maxFrameX) {
+      // final kuuga
+      if (
+        this.weaponType === 4 &&
+        this.frameX === this.maxFrameX &&
+        this.row === this.maxRow &&
+        this.x < this.canvas.width &&
+        this.x > -100
+      ) {
+        const kuugaSKILLSpeed = 100;
+        if (this.isFlipped) {
+          this.x -= kuugaSKILLSpeed;
+        } else {
+          this.x += kuugaSKILLSpeed;
+        }
+      } else if (this.frameX < this.maxFrameX) {
         this.frameX++;
       } else {
         if (this.row < this.maxRow) {
+          this.spriteWidth = 90;
           this.row++;
           this.srcY += 170;
           if (this.weaponType === 1 || this.weaponType === 2) {
@@ -313,14 +393,33 @@ export default class Decade {
             this.srcY += 240;
             this.spriteWidth = 180;
             this.maxFrameX = 2;
+          } else if (this.weaponType === 4) {
+            this.maxFrameX = 10;
+          } else if (this.weaponType === 5) {
+            if (this.row === 2) {
+              this.spriteWidth = 105;
+              this.maxFrameX = 8;
+            }
+            if (this.row === 3) {
+              this.spriteWidth = 180;
+              this.spriteHeight = 170;
+              this.maxFrameX = 6;
+            } else if (this.row === 4) {
+              this.spriteWidth = 180;
+              this.maxFrameX = 4;
+            }
           } else {
             this.srcY += 170;
-            this.spriteWidth = 90;
             this.maxFrameX = 9;
           }
         } else {
           this.skilling = false;
           this.comeBackToIdle();
+        }
+        // comeback to lastest coordinates x,y
+        if (this.weaponType === 4) {
+          this.x = this.lastCoordinates.x;
+          this.y = this.lastCoordinates.y;
         }
         this.frameX = 1;
       }
